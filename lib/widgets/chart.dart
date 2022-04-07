@@ -14,6 +14,7 @@ class Chart extends StatelessWidget {
       final weekDay = DateTime.now().subtract(Duration(days: index));
       double totalSum = 0.0;
       for (var i = 0; i < recentTransactions.length; i++) {
+        // print('recent day ${recentTransactions[i].date.day} ${weekDay.day}');
         if (recentTransactions[i].date.day == weekDay.day &&
             recentTransactions[i].date.month == weekDay.month &&
             recentTransactions[i].date.year == weekDay.year) {
@@ -35,6 +36,7 @@ class Chart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // print('test $groupedTransactionValues $maxSpending');
     return Card(
         elevation: 6,
         margin: EdgeInsets.all(10),

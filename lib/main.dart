@@ -33,14 +33,20 @@ class MyApp extends StatelessWidget {
           secondary: Colors.green,
         ),
         fontFamily: 'OpenSans',
-        appBarTheme: AppBarTheme(
-          titleTextStyle:  TextStyle(
-            fontFamily: 'OpenSans',
-            fontSize: 18,
-            fontWeight: FontWeight.bold
-          )
-        ),
-        textTheme: const TextTheme(bodyText2: TextStyle(color: Colors.brown,fontFamily: 'OpenSans',fontWeight: FontWeight.bold)),
+        appBarTheme: const AppBarTheme(
+            titleTextStyle: TextStyle(
+                fontFamily: 'OpenSans',
+                fontSize: 18,
+                fontWeight: FontWeight.bold)),
+        textTheme: const TextTheme(
+            bodyText2: TextStyle(
+                color: Colors.brown,
+                fontFamily: 'OpenSans',
+                fontWeight: FontWeight.bold)),
+        errorColor: Colors.red,
+        elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all(Colors.green))),
       ),
       home: const MyHomePage(title: 'Expense Planner'),
     );
@@ -74,17 +80,27 @@ class _MyHomePageState extends State<MyHomePage> {
     //     id: 't3', title: 'New Shoes 2', amount: 62.98, date: DateTime.now()),
   ];
 
-  List<Transaction>? get recentTransaction{
+  List<Transaction>? get recentTransaction {
     return _usertransaction.where((element) {
-       return element.date.isAfter(DateTime.now().subtract(Duration(days: 7)));
+      return element.date.isAfter(DateTime.now().subtract(Duration(days: 7)));
     }).toList();
   }
-  void _addNewTransaction(String txTitle, double txAmount) {
+
+  void _deleteItem(String id) {
+    setState(() {
+      _usertransaction.removeWhere((element) {
+        return element.id == id;
+      });
+    });
+  }
+
+  void _addNewTransaction(
+      String txTitle, double txAmount, DateTime pickedDate) {
     final newTx = Transaction(
         id: DateTime.now().toString(),
         title: txTitle,
         amount: txAmount,
-        date: DateTime.now());
+        date: pickedDate);
     setState(() {
       _usertransaction.add(newTx);
     });
@@ -122,7 +138,8 @@ class _MyHomePageState extends State<MyHomePage> {
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
-      body: Column(
+      body: SingleChildScrollView(
+          child: Column(
         // Column is also a layout widget. It takes a list of children and
         // arranges them vertically. By default, it sizes itself to fit its
         // children horizontally, and tries to be as tall as its parent.
@@ -137,15 +154,12 @@ class _MyHomePageState extends State<MyHomePage> {
         // center the children vertically; the main axis here is the vertical
         // axis because Columns are vertical (the cross axis would be
         // horizontal).
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Container(
-            width: double.infinity,
-            child: Chart(_usertransaction)
-          ),
-          TransactionList(_usertransaction),
+          Container(width: double.infinity, child: Chart(_usertransaction)),
+          TransactionList(_usertransaction,_deleteItem),
         ],
-      ),
+      )),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: FloatingActionButton(
         onPressed: () => _startAddNewTransaction(context),
