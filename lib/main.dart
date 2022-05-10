@@ -1,11 +1,16 @@
+import 'dart:io';
+
 import 'package:expense_planner/widgets/chart.dart';
-import 'package:expense_planner/widgets/transaction_list.dart';
-import 'package:flutter/material.dart';
 import 'package:expense_planner/widgets/new_transaction.dart';
+import 'package:expense_planner/widgets/transaction_list.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 import 'models/transaction.dart';
 
 void main() {
+  // SystemChrome.setPreferredOrientations(
+  //     [DeviceOrientation.portraitUp, DeviceOrientation.portraitUp]);
   runApp(MyApp());
 }
 
@@ -71,6 +76,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  bool _change = false;
   final List<Transaction> _usertransaction = [
     // Transaction(
     //     id: 't1', title: 'New Shoes', amount: 69.98, date: DateTime.now()),
@@ -94,8 +100,8 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void _addNewTransaction(
-      String txTitle, double txAmount, DateTime pickedDate) {
+  void _addNewTransaction(String txTitle, double txAmount,
+      DateTime pickedDate) {
     final newTx = Transaction(
         id: DateTime.now().toString(),
         title: txTitle,
@@ -119,49 +125,119 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isLandscape =
+        MediaQuery
+            .of(context)
+            .orientation == Orientation.landscape;
+    final chartHeight = isLandscape ? 0.5 : 0.25;
+    //dynamic is used for understanding of dart about the preferredsize class for both ios and android
+    final dynamic appBar = Platform.isIOS
+        ? CupertinoNavigationBar(
+      middle: Text(widget.title),
+      trailing:Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+        GestureDetector(
+          child:  const Icon(CupertinoIcons.add),
+          onTap: () => _startAddNewTransaction(context),
+        )
+      ],),
+    )
+        : AppBar(
+      actions: [
+        IconButton(
+            onPressed: () => _startAddNewTransaction(context),
+            icon: Icon(Icons.add))
+      ],
+      // Here we take the value from the MyHomePage object that was created by
+      // the App.build method, and use it to set our appbar title.
+      title: Text(widget.title),
+    );
+
+    final listWidget = Container(
+        height: (MediaQuery
+            .of(context)
+            .size
+            .height -
+            appBar.preferredSize.height -
+            MediaQuery
+                .of(context)
+                .padding
+                .top) *
+            0.6,
+        child: TransactionList(_usertransaction, _deleteItem));
+    final charWidget = Container(
+        width: double.infinity,
+        height: (MediaQuery
+            .of(context)
+            .size
+            .height -
+            appBar.preferredSize.height -
+            MediaQuery
+                .of(context)
+                .padding
+                .top) *
+            chartHeight,
+        child: Chart(_usertransaction));
+    final pageBody = SafeArea(child: SingleChildScrollView(
+        child: Column(
+          // Column is also a layout widget. It takes a list of children and
+          // arranges them vertically. By default, it sizes itself to fit its
+          // children horizontally, and tries to be as tall as its parent.
+          //
+          // Invoke "debug painting" (press "p" in the console, choose the
+          // "Toggle Debug Paint" action from the Flutter Inspector in Android
+          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
+          // to see the wireframe for each widget.
+          //
+          // Column has various properties to control how it sizes itself and
+          // how it positions its children. Here we use mainAxisAlignment to
+          // center the children vertically; the main axis here is the vertical
+          // axis because Columns are vertical (the cross axis would be
+          // horizontal).
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            if (isLandscape)
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Text('Show Chart',style: Theme.of(context).textTheme.titleMedium,),
+                Switch.adaptive(
+                    activeColor: Theme
+                        .of(context)
+                        .colorScheme
+                        .secondary,
+                    value: _change,
+                    onChanged: (bool value) {
+                      setState(() {
+                        _change = value;
+                      });
+                    })
+              ]),
+            if (!isLandscape) charWidget,
+            if (!isLandscape) listWidget,
+            if (isLandscape) _change ? charWidget : listWidget
+          ],
+        )));
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
-    return Scaffold(
+    return Platform.isIOS
+        ? CupertinoPageScaffold(
+      child: pageBody,
+      navigationBar: appBar,
+    )
+        : Scaffold(
       resizeToAvoidBottomInset: false,
       //new line
-      appBar: AppBar(
-        actions: [
-          IconButton(
-              onPressed: () => _startAddNewTransaction(context),
-              icon: Icon(Icons.add))
-        ],
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: SingleChildScrollView(
-          child: Column(
-        // Column is also a layout widget. It takes a list of children and
-        // arranges them vertically. By default, it sizes itself to fit its
-        // children horizontally, and tries to be as tall as its parent.
-        //
-        // Invoke "debug painting" (press "p" in the console, choose the
-        // "Toggle Debug Paint" action from the Flutter Inspector in Android
-        // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-        // to see the wireframe for each widget.
-        //
-        // Column has various properties to control how it sizes itself and
-        // how it positions its children. Here we use mainAxisAlignment to
-        // center the children vertically; the main axis here is the vertical
-        // axis because Columns are vertical (the cross axis would be
-        // horizontal).
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Container(width: double.infinity, child: Chart(_usertransaction)),
-          TransactionList(_usertransaction,_deleteItem),
-        ],
-      )),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: FloatingActionButton(
+      appBar: appBar,
+      body: pageBody,
+      floatingActionButtonLocation:
+      FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: Platform.isIOS
+          ? Container()
+          : FloatingActionButton(
         onPressed: () => _startAddNewTransaction(context),
         child: Icon(Icons.add),
       ),
